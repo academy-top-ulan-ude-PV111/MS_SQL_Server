@@ -1,0 +1,25 @@
+SET TRANSACTION ISOLATION LEVEL SERIALIZABLE
+
+
+USE MyTemp;
+
+BEGIN TRY
+BEGIN TRANSACTION MyTrans
+
+	UPDATE MyProducts SET category_id = 4
+		WHERE category_id = 2;
+
+	UPDATE MyProducts SET price = price * 1.05
+		WHERE category_id = 1;
+
+END TRY
+BEGIN CATCH
+	ROLLBACK TRANSACTION
+
+	SELECT ERROR_NUMBER() AS [Error code],
+		   ERROR_MESSAGE() AS [Error message]
+	RETURN
+
+END CATCH
+
+COMMIT TRANSACTION
