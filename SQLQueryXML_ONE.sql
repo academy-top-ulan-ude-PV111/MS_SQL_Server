@@ -86,8 +86,29 @@ SELECT b.title, a.name_first, a.name_last, b.year_publ, b.price, l.title
 	INNER JOIN author AS a ON b.author_id = a.id
 	INNER JOIN langs AS l ON b.lang_id = l.id
 
-SELECT b.title, a.name_first, a.name_last, b.year_publ, b.price, l.title AS [lang]
-	FROM book AS b
-	INNER JOIN author AS a ON b.author_id = a.id
-	INNER JOIN langs AS l ON b.lang_id = l.id
-	FOR XML AUTO , TYPE, ELEMENTS, ROOT ('Books')
+DECLARE @XmlDocument XML;
+DECLARE @XmlHandler INT;
+
+SET @XmlDocument = 
+				(SELECT b.title, a.name_first, a.name_last, 
+						b.year_publ, b.price, l.title AS [lang]
+					FROM book AS b
+					INNER JOIN author AS a ON b.author_id = a.id
+					INNER JOIN langs AS l ON b.lang_id = l.id
+					FOR XML PATH('Book'), ELEMENTS, ROOT ('Books'));
+
+EXEC sp_xml_preparedocument @XmlHandler OUTPUT, @XmlDocument
+
+SELECT *
+	FROM OPENXML(@XmlHandler, '/Books/Book', 2)
+	WITH(
+			title NVARCHAR(50),
+			name_first NVARCHAR(50),
+			name_last NVARCHAR(50),
+			year_publ DATE,
+			price MONEY,
+			lang NVARCHAR(50)
+		);
+
+EXEC sp_xml_removedocument @XmlHandler
+
